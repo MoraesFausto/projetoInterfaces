@@ -65,7 +65,6 @@ void printPacote(byte *pac, int tamanho){
       for(int i=4;i<tamanho;i++){
         Serial.print(pac[i]);
       }
-      Serial.println();  // print the payload's value
 }
 
 bool aguardaMsg(int tipo){
@@ -93,10 +92,6 @@ bool sendPacket(byte *pacote, int tamanho, int destino, int controle){
     pacote[1]=destino;
     pacote[2]=controle;
     pacote[3]=indice;
-    for(int i=0;i<tamanho;i++){
-      Serial.print(pacote[i]);
-    }
-    Serial.println();
    
     while(1){
         
@@ -147,8 +142,7 @@ void loop() {
           // Aguarda a mensagem principal
           if (aguardaMsg(MSG)) {
             sendPacket(&payload[0], sizeof(payload), payloadRx[0], ACK);
-            Serial.println("Comunicacao completa - ACK enviado!");
-            printPacote(payloadRx, sizeof(payloadRx));
+            Serial.println(payloadRx[4]);
           } else {
             Serial.println("Timeout aguardando MSG!");
           }
