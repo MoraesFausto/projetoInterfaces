@@ -10,7 +10,7 @@
 #define RTS 2
 #define CTS 3
 
-#define TIMEOUT 250 //milisegundos
+#define TIMEOUT 5000 //milisegundos
 
 RF24 radio(CE_PIN, CSN_PIN);
 uint64_t address[2] = { 0x3030303030LL, 0x3030303030LL};
@@ -34,7 +34,7 @@ void setup() {
   }
 
   radio.setPALevel(RF24_PA_MAX);  // RF24_PA_MAX is default.
-  radio.setChannel(55);
+  radio.setChannel(155);
   radio.setPayloadSize(sizeof(payload));  // float datatype occupies 4 bytes
   radio.setAutoAck(false);
   radio.setCRCLength(RF24_CRC_DISABLED);
@@ -121,7 +121,7 @@ bool sendPacket(byte *pacote, int tamanho, int destino, int controle, int valor)
 
 void loop() {
       // Become the TX node
-      int umidade = random(0, 101);
+      int umidade = GetTemp();
       unsigned long start_timer = micros();                // start the timer
       bool report = sendPacket(&payload[0], sizeof(payload), 11, RTS, NULL);  // transmit & save the report
       report = aguardaMsg(CTS);
@@ -140,5 +140,36 @@ void loop() {
 
 
   radio.flush_rx();
-  delay(1000);
+  delay(10000);
+}
+
+double GetTemp(void)
+{
+  unsigned int wADC;
+  double t;
+
+  // The internal temperature has to be used
+  // with the internal reference of 1.1V.
+  // Channel 8 can not be selected with
+  // the analogRead function yet.
+
+  // Set the internal reference and mux.
+  ADMUX = (_BV(REFS1) | _BV(REFS0) | _BV(MUX3));
+  ADCSRA |= _BV(ADEN);  // enable the ADC
+
+  delay(20);            // wait for voltages to become stable.
+
+  ADCSRA |= _BV(ADSC);  // Start the ADC
+
+  // Detect end-of-conversion
+  while (bit_is_set(ADCSRA,ADSC));
+
+  // Reading register "ADCW" takes care of how to read ADCL and ADCH.
+  wADC = ADCW;
+
+  // The offset of 324.31 could be wrong. It is just an indication.
+  t = (wADC - 324.31 ) / 1.22;
+
+  // The returned temperature is in degrees Celcius.
+  return (t);
 }
