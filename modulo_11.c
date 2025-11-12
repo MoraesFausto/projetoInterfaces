@@ -10,7 +10,7 @@
 #define RTS 2
 #define CTS 3
 
-#define TIMEOUT 500 //milisegundos
+#define TIMEOUT 5000 //milisegundos
 
 RF24 radio(CE_PIN, CSN_PIN);
 uint64_t address[2] = { 0x3030303030LL, 0x3030303030LL};
@@ -34,7 +34,7 @@ void setup() {
   }
 
   radio.setPALevel(RF24_PA_MAX);  // RF24_PA_MAX is default.
-  radio.setChannel(55);
+  radio.setChannel(155);
   radio.setPayloadSize(sizeof(payload));  // float datatype occupies 4 bytes
   radio.setAutoAck(false);
   radio.setCRCLength(RF24_CRC_DISABLED);
@@ -155,5 +155,5 @@ void loop() {
     }
 
   radio.flush_rx();
-  delay(10);
+  delay(100);
 }
