@@ -20,6 +20,7 @@ byte payloadRx[5] = "    ";
 uint8_t origem=11;
 uint8_t indice=0;
 
+int umidade = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -87,12 +88,14 @@ bool aguardaMsg(int tipo){
 }
   
 
-bool sendPacket(byte *pacote, int tamanho, int destino, int controle){
+bool sendPacket(byte *pacote, int tamanho, int destino, int controle, int valor){
     pacote[0]=origem;
     pacote[1]=destino;
     pacote[2]=controle;
     pacote[3]=indice;
-   
+    if(valor != NULL){
+      pacote[4]=valor;
+    }
     while(1){
         
        radio.startListening();
@@ -109,16 +112,14 @@ bool sendPacket(byte *pacote, int tamanho, int destino, int controle){
     }
 }
 
-
-void loop() {
-    char c = 'R';
-    if (c == 'T') {
-      // Become the TX node
+void enviarTemperaturaPara37(int umidade){
+        // Become the TX node
       unsigned long start_timer = micros();                // start the timer
-      bool report = sendPacket(&payload[0], sizeof(payload), 31, RTS);  // transmit & save the report
+      bool report = sendPacket(&payload[0], sizeof(payload), 37, RTS, NULL);  // transmit & save the report
       report = aguardaMsg(CTS);
       if(report){
-        sendPacket(&payload[0], sizeof(payload), 31, MSG);
+        Serial.println("AQUI");
+        sendPacket(&payload[0], sizeof(payload), 37, MSG, umidade);
         report = aguardaMsg(ACK);
       }
       
@@ -128,21 +129,25 @@ void loop() {
       }else{
           Serial.println("FALHA!");
         }
-    }
+}
 
+void loop() {
+    char c = 'R';
     if (c == 'R') {
       // Become the RX node
       radio.startListening();
       
       // Aguarda receber RTS (Request to Send)
       if (aguardaMsg(RTS)) {
-        bool report = sendPacket(&payload[0], sizeof(payload), payloadRx[0], CTS);
+        bool report = sendPacket(&payload[0], sizeof(payload), payloadRx[0], CTS, NULL);
       
         if (report) {
           // Aguarda a mensagem principal
           if (aguardaMsg(MSG)) {
-            sendPacket(&payload[0], sizeof(payload), payloadRx[0], ACK);
-            Serial.println(payloadRx[4]);
+            sendPacket(&payload[0], sizeof(payload), payloadRx[0], ACK, NULL);
+            umidade = payloadRx[4];
+            Serial.println(umidade);
+            enviarTemperaturaPara37(umidade > 20 ? 1 : 0) ;
           } else {
             Serial.println("Timeout aguardando MSG!");
           }
